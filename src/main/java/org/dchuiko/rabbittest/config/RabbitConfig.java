@@ -16,13 +16,17 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.retry.MessageRecoverer;
+import org.springframework.amqp.rabbit.transaction.RabbitTransactionManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.transaction.ChainedTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.retry.interceptor.StatefulRetryOperationsInterceptor;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import javax.sql.DataSource;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -53,14 +57,27 @@ public class RabbitConfig {
         factory.setConnectionFactory(connectionFactory);
 //        factory.setRecoveryBackOff(listenerBackOff());
 //        factory.setMessageConverter(messageConverter);
-        factory.setTransactionManager(platformTransactionManager);
-        factory.setChannelTransacted(true);
+//        factory.setTransactionManager(platformTransactionManager);
+//        factory.setChannelTransacted(true);
         factory.setAdviceChain(statefulRetryInterceptor());
 
         // number of threads for RabbitListener
         factory.setConcurrentConsumers(10);
         return factory;
     }
+
+
+     // A ChainedTransactionManager needed to commit or rollback transactions in
+     // postgres and rabbitmq during one call of PlatformTransactionManager.{commit(), rollback()}
+     // This tx manager is not a XA tx manager. So it's possible situation when transaction committed
+     // in database and rolled back in rabbitmq. In this case a HeuristicCompletionException will raised.
+     @Bean
+     public PlatformTransactionManager transactionManager(DataSource datasource, ConnectionFactory connectionFactory) {
+         ChainedTransactionManager c = new ChainedTransactionManager(
+                 new RabbitTransactionManager(connectionFactory), new DataSourceTransactionManager(datasource)
+         );
+         return c;
+     }
 
     /**
      * For stateless interceptor works only initial

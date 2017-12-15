@@ -46,8 +46,10 @@ public class Sender implements CommandLineRunner {
             rabbitSender.send(RabbitConfig.slowQueueName, "Hello Slow #" + i + "!");
         }
 
-        log.warn("Sending Error message");
-        rabbitSender.send(RabbitConfig.errorQueueName, "Hello Error !");
+        for (int i = 0; i < receiver.getErrorCount(); i++) {
+            log.warn("Sending Error message");
+            rabbitSender.send(RabbitConfig.errorQueueName, "Hello Error !");
+        }
     }
 
 

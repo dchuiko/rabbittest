@@ -25,9 +25,15 @@ public class TransactionalSender {
         log.warn("Sending Transactional Error message");
         rabbitSender.send(RabbitConfig.transactionalQueueName, "Hello Transactional Error !");
 
-        if (true) {
-            throw new RuntimeException();
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+
+//        if (true) {
+//            throw new RuntimeException();
+//        }
     }
 
 
