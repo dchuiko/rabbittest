@@ -85,6 +85,7 @@ public class Receiver {
     @RabbitListener(id = "transactional", queues = {"#{rtTransactionalQueue}"}, containerFactory =
             "rabbitListenerContainerFactory")
     public void receiveTransactional(String msg, Message message) {
+        log.warn("--- COUNT: " + customerService.count());
         log.warn("Received Transactional <{}>, rabbit message:\n<{}>", msg, message);
     }
 

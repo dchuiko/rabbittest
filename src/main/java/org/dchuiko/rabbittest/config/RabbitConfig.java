@@ -22,10 +22,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.transaction.ChainedTransactionManager;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.interceptor.StatefulRetryOperationsInterceptor;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.concurrent.TimeUnit;
 
@@ -72,9 +76,9 @@ public class RabbitConfig {
      // This tx manager is not a XA tx manager. So it's possible situation when transaction committed
      // in database and rolled back in rabbitmq. In this case a HeuristicCompletionException will raised.
      @Bean
-     public PlatformTransactionManager transactionManager(DataSource datasource, ConnectionFactory connectionFactory) {
+     public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory, ConnectionFactory connectionFactory) {
          ChainedTransactionManager c = new ChainedTransactionManager(
-                 new RabbitTransactionManager(connectionFactory), new DataSourceTransactionManager(datasource)
+                 new RabbitTransactionManager(connectionFactory), new JpaTransactionManager(entityManagerFactory)
          );
          return c;
      }
@@ -173,6 +177,9 @@ public class RabbitConfig {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setExchange(rtExchange.getName());
         template.setChannelTransacted(true);
+        RetryTemplate rt = new RetryTemplate();
+        rt.setBackOffPolicy(new ExponentialBackOffPolicy());
+        template.setRetryTemplate(rt);
         return template;
     }
 
