@@ -31,11 +31,11 @@ public class Sender implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         send();
-        try {
-            transactionalSender.sendTransactional();
-        } catch (Exception e) {
-            // ignore
-        }
+//        try {
+//            transactionalSender.sendTransactional();
+//        } catch (Exception e) {
+//            // ignore
+//        }
         receiver.getLatch().await(20000, TimeUnit.MILLISECONDS);
         context.close();
     }

@@ -22,7 +22,7 @@ public class Receiver {
     private final Logger log = LoggerFactory.getLogger(Receiver.class);
 
     private final int slowCount = 0;
-    private final int errorCount = 0;
+    private final int errorCount = 1;
 
     private final int count = slowCount + errorCount;
     private final CountDownLatch latch = new CountDownLatch(count);

@@ -61,8 +61,8 @@ public class RabbitConfig {
         factory.setConnectionFactory(connectionFactory);
 //        factory.setRecoveryBackOff(listenerBackOff());
 //        factory.setMessageConverter(messageConverter);
-//        factory.setTransactionManager(platformTransactionManager);
-//        factory.setChannelTransacted(true);
+        factory.setTransactionManager(platformTransactionManager);
+        factory.setChannelTransacted(true);
         factory.setAdviceChain(statefulRetryInterceptor());
 
         // number of threads for RabbitListener
