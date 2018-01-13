@@ -50,6 +50,9 @@ public class Sender implements CommandLineRunner {
             log.warn("Sending Error message");
             rabbitSender.send(RabbitConfig.errorQueueName, "Hello Error !");
         }
+
+        String result = rabbitSender.sendAndReceive(RabbitConfig.rpcQueueName, "RPC hello!");
+        log.warn("RPC reply: '" + result + "'");
     }
 
 

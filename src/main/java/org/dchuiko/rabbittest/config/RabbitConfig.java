@@ -41,6 +41,8 @@ public class RabbitConfig {
     public final static String slowQueueName = "rt-slow-queue";
     public final static String errorQueueName = "rt-error-queue";
     public final static String transactionalQueueName = "rt-transactional-queue";
+    public final static String rpcQueueName = "rpc-queue";
+    public final static String rpcReplyQueueName = "rpc-reply-queue";
     public final static String errorSecondStepQueueName = "rt-error-second-step-queue";
 
     @Bean
@@ -172,6 +174,26 @@ public class RabbitConfig {
     }
 
     @Bean
+    Queue rpcQueue() {
+        return new Queue(rpcQueueName);
+    }
+
+    @Bean
+    Binding rpcQueueBinding(@Qualifier("rpcQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(rpcQueueName);
+    }
+
+    @Bean
+    Queue rpcReplyQueue() {
+        return new Queue(rpcReplyQueueName);
+    }
+
+    @Bean
+    Binding rpcReplyQueueBinding(@Qualifier("rpcReplyQueue") Queue queue, TopicExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(rpcReplyQueueName);
+    }
+
+    @Bean
     public RabbitTemplate rabbitTemplate(Exchange rtExchange,
                                          ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
@@ -180,6 +202,15 @@ public class RabbitConfig {
         RetryTemplate rt = new RetryTemplate();
         rt.setBackOffPolicy(new ExponentialBackOffPolicy());
         template.setRetryTemplate(rt);
+        return template;
+    }
+
+    @Bean
+    public RabbitTemplate rpcRabbitTemplate(Exchange rtExchange,
+                                         ConnectionFactory connectionFactory) {
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+        template.setExchange(rtExchange.getName());
+        template.setChannelTransacted(true);
         return template;
     }
 

@@ -12,14 +12,21 @@ import java.util.UUID;
 @Component
 public class RabbitSender {
     private final RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rpcRabbitTemplate;
 
     @Autowired
-    public RabbitSender(RabbitTemplate rabbitTemplate) {
+    public RabbitSender(RabbitTemplate rabbitTemplate,
+                        RabbitTemplate rpcRabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
+        this.rpcRabbitTemplate = rpcRabbitTemplate;
     }
 
     public void send(String queueName, String msg) {
         rabbitTemplate.convertAndSend(queueName, (Object) msg, MESSAGE_POST_PROCESSOR);
+    }
+
+    public String sendAndReceive(String queueName, String msg) {
+        return (String) rpcRabbitTemplate.convertSendAndReceive(queueName, (Object) msg, MESSAGE_POST_PROCESSOR);
     }
 
     private static final class RtMessagePostProcessor implements MessagePostProcessor {

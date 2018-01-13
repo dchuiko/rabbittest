@@ -8,6 +8,7 @@ import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +23,7 @@ public class Receiver {
     private final Logger log = LoggerFactory.getLogger(Receiver.class);
 
     private final int slowCount = 0;
-    private final int errorCount = 1;
+    private final int errorCount = 0;
 
     private final int count = slowCount + errorCount;
     private final CountDownLatch latch = new CountDownLatch(count);
@@ -87,6 +88,12 @@ public class Receiver {
     public void receiveTransactional(String msg, Message message) {
         log.warn("--- COUNT: " + customerService.count());
         log.warn("Received Transactional <{}>, rabbit message:\n<{}>", msg, message);
+    }
+
+    @RabbitListener(id="rpc", queues = {"#{rpcQueue}"}, containerFactory = "rabbitListenerContainerFactory")
+    @SendTo("#{rpcReplyQueue.name}")
+    public String rpc(String msg, Message message) {
+        return "RPC reply";
     }
 
     CountDownLatch getLatch() {
