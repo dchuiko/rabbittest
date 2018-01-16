@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
@@ -65,7 +66,7 @@ public class RabbitConfig {
 //        factory.setMessageConverter(messageConverter);
         factory.setTransactionManager(platformTransactionManager);
         factory.setChannelTransacted(true);
-        factory.setAdviceChain(statefulRetryInterceptor());
+//        factory.setAdviceChain(statefulRetryInterceptor());
 
         // number of threads for RabbitListener
         factory.setConcurrentConsumers(10);
@@ -174,12 +175,18 @@ public class RabbitConfig {
     }
 
     @Bean
+    DirectExchange rtDirectExchange() {
+        return new DirectExchange("rt-direct-spring-boot-exchange");
+    }
+
+
+    @Bean
     Queue rpcQueue() {
         return new Queue(rpcQueueName);
     }
 
     @Bean
-    Binding rpcQueueBinding(@Qualifier("rpcQueue") Queue queue, TopicExchange exchange) {
+    Binding rpcQueueBinding(@Qualifier("rpcQueue") Queue queue, @Qualifier("rtDirectExchange") DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(rpcQueueName);
     }
 
@@ -189,7 +196,7 @@ public class RabbitConfig {
     }
 
     @Bean
-    Binding rpcReplyQueueBinding(@Qualifier("rpcReplyQueue") Queue queue, TopicExchange exchange) {
+    Binding rpcReplyQueueBinding(@Qualifier("rpcReplyQueue") Queue queue, @Qualifier("rtDirectExchange") DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(rpcReplyQueueName);
     }
 
@@ -206,11 +213,13 @@ public class RabbitConfig {
     }
 
     @Bean
-    public RabbitTemplate rpcRabbitTemplate(Exchange rtExchange,
-                                         ConnectionFactory connectionFactory) {
+    public RabbitTemplate rpcRabbitTemplate(@Qualifier("rtDirectExchange") DirectExchange rtExchange,
+                                            Queue rpcQueue,
+                                            ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setExchange(rtExchange.getName());
-        template.setChannelTransacted(true);
+        template.setRoutingKey(rpcQueue.getName());
+        template.setChannelTransacted(false);
         return template;
     }
 
